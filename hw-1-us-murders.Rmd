@@ -1,0 +1,127 @@
+---
+title: "Homework 1: US gun murders"
+date: "Patrick Gravelle 31345944 -- September 22, 2018"
+output: html_document
+---
+#### Due: September 26th by 11:59pm
+
+
+Several of your friends live in Europe and are offered jobs at a US company with many locations all across the country. The job offers are great but news with headlines such as [**US Gun Homicide Rate Higher Than Other Developed Countries**](https://abcnews.go.com/News/us-gun-ownership-homicide-rate-higher-than-other-developed-countries/blogEntry?id=18008187) have them worried. Charts like this make them worry even more:
+
+![US gun homicides second chart](https://everytownresearch.org/wp-content/uploads/2016/07/GunTrends_murders_per_1000.png) 
+
+You want to convince your friends that the US is a large and diverse country with 50 very different states as well as the District of Columbia (DC). You want to recommend some states for each friend knowing that some like hiking, while others would like to be close to several large cosmopolitan cities. Use data from the US murders data set:
+
+```{r}
+library(dslabs)
+data(murders)
+```
+
+1. What is the state with the most murders? Would you say this is the 
+most dangerous state? Hint: Make a plot showing the relationship between population size and number of murders.
+
+```{r}
+murders$state[which.max(murders$total)]
+
+murders$state[which.max(murders$population)]
+```
+
+California has the most murders, but as you can see California also has the greatest total population which means the total murders is not indicative of overall danger.
+
+```{r}
+plot(murders$population,murders$total, xlab = "Total Population", ylab = "Total Murders")
+```
+
+
+2. Add a column to the murder data table called `murder_rate` with each states murder rate.
+
+```{r}
+murder_rate <- (murders$total/murders$population)*100000
+murders_new <- data.frame(murders,murder_rate)
+```
+
+
+3. Describe the distribution of murder rates across states. How similar are states? How much do murder rates vary by geographical regions?
+
+```{r}
+# Ordering the States by murder rate
+index <- order(murder_rate)
+murders_new$state[index]
+
+# Determining the total number of states below the average murder rate
+avgmurders <- mean(murder_rate)
+below <- murder_rate < avgmurders
+sum(below)
+
+# Number of states between 1 and 3 murders per 100,000 people
+middle <- 1 <= murders_new$murder_rate & murders_new$murder_rate <=5
+sum(middle)
+
+# Min and Max murder rate values
+min(murders_new$murder_rate)
+max(murders_new$murder_rate)
+
+# Distinguishing the geographical locations
+northeast <- murders_new$region == "Northeast"
+south <- murders_new$region == "South"
+north_central <- murders_new$region == "North Central"
+west <- murders_new$region == "West"
+
+ne <- index & northeast
+so <- index & south
+nc <- index & north_central
+we <- index & west
+
+# Determining the range of murder states by region and then plotting it
+ne_range <- c(min(murders_new$murder_rate[ne]),max(murders_new$murder_rate[ne]))
+so_range <- c(min(murders_new$murder_rate[so]),max(murders_new$murder_rate[so]))
+nc_range <- c(min(murders_new$murder_rate[nc]),max(murders_new$murder_rate[nc]))
+we_range <- c(min(murders_new$murder_rate[we]),max(murders_new$murder_rate[we]))
+
+ranges <- c(ne_range,so_range,nc_range,we_range)
+region <- c("Northeast Min","Northeast Max", "South Min", "South Max","North Central Min", "North Central Max","West Min", "West Max")
+
+plot(ranges, xaxt = "n", col=c("Blue","Blue","Red","Red","Green","Green","Purple","Purple"),pch=16, main = "Region Murder Rate Ranges", ylab = "Murder Rate per 100,000 People", xlab = "Region Min & Max")
+axis(1, at=1:8, labels=region, las=0)
+```
+
+We can see based on the scatter plot from question 1 that the states follow a similar trend of increasing murder rates as the state population increases.  We see that 27 of the 51 states included are below the average which isn't a very unusual number below the average. However, 35 of these states are between 1 and 5 murders per 100,000 people, placing nearly 70% of the states within this middle range. Although, there is a large discrepancy between the highest and lowest murder rates with the lowest being 0.32 and the highest 16.45 murders per 100,000 people, respectively. Separating the states into geographical regions we can see a similarity in the total murder rate range amongst the Northeast, North Central, and West regions. The South region is slightly higher in its minimum and much higher in the maximum. If we eliminate this outlier point, the South's maximum becomes 7.74, while although still the largest of the regions, much closer proportionally.
+
+### Add boxplot
+```{r}
+boxplot(murder_rate~region, data = murders, col=c("Blue","Red","Dark Green", "Purple"))
+
+```
+
+By generating a boxplot of the murder rates per region we are able to see the distribution within each region from the quartiles and outliers. Although we could use hypothesis testing to determine whether the median murder rates are different amongst regions, we can see the distributions are approximately similar for each region except for the South which has higher overall rates.
+
+4. Write a report for your friends reminding them that the US is a large and diverse country with 50 very different states as well as the District of Columbia (DC). Suppose one of your friends loves hiking, one wants to live in a warm climate, and another would like to be close to several large cosmopolitan cities. Recommend a desirable state for each friend.
+
+
+```{r}
+low <- murder_rate < 1.5
+notsouth <- !south
+ultra_safe <- low & notsouth
+murders_new$state[ultra_safe]
+
+medium <- murder_rate < 3
+warm_south <- medium & south
+murders_new$state[warm_south]
+warmth <- low & west
+murders_new$state[warmth]
+
+
+cosmo <- northeast & medium
+murders_new$state[cosmo]
+
+how_low <- murder_rate < 1
+sum(how_low)
+
+```
+
+
+I believe the bar graph presented in Question 3 is the best representation to describe to my friends the diversity of the United States. For the Northeast, North Central, and the West regions, 50% of these states have a murder rate approximately 2.5 people per 100,000 people or less. This is a significant portion of the country. Moreover, 12 of the 51 states included have less than a single murder per 100,000 people. Many individuals focus on the highest worst murder rates and attribute it to the country as a whole, such as the 16.45 and 7.74 murders per 100,000 people in D.C. and Louisianna, respectively. However, these outliers are not representative of the country as a whole. There are many things to consider like econmic factors, population density, and employment rates that would all play a role in determining these murder rates. Take D.C. for example (obviously not a state), but it is taking the murder rate of a major metropolitan area with a high population density where there are typically more murders than rural locations. If major U.S. city murder rates were computed here, it is likely that D.C. would not be nearly as significant of an outlier.
+
+Thus, for my first friend who loves hiking, I have chosen a state that can be classified as ultra safe with a murder rate less than 1.5 and geographically not in the south as it was shown in the box plot graph to be higher than average in each of murder rate quartiles. This state is Colorado because it is the midst of the Rocky Mountains and is known for it's outdoor activities which would be perfect for this friend.
+
+For the second friend who wants to live in a warm climate I have chosen two states to give this friend a choice between two distinctly different warm climates. Both states have a medium ranked murder rate at most, which is one that is less than 3 murders per 100,000. However, the first choice of a warm climate is in the south with a murder rate just under 3 is Alabama. This would provide a moderately safe environment with a very warm and dry climate. Although, my recommendation would to choose my other option which is a wonderfully warm climate and only has about 0.5 murders per 100,000 people which is that of Hawaii. The weather may not be as consistently warm or dry but it certainly provides the desired climate and safety.
